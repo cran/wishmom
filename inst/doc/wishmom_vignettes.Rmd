@@ -1,0 +1,588 @@
+---
+title: "Using the wishmom Package"
+author: "Raymond Kan and Preston Liang"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+vignette: >
+  %\VignetteIndexEntry{wishmom_vignettes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+# Introduction
+
+The `wishmom` package provides functions to compute the expectation of matrix-valued functions of $\beta$-Wishart and inverse $\beta$-Wishart distributions ($\beta=1$: Real Wishart, $\beta=2$: Complex Wishart, $\beta=4$: Quaternion Wishart, $\beta=8$: Octonion Wishart). The main functions in this package are `wishmom()` and `iwishmom()`, which handle the $\beta$-Wishart and inverse $\beta$-Wishart distributions, respectively. These programs
+are developed based on the results in Letac and Massam (2004)
+and Hillier and Kan (2024).
+
+You can install the package and load it using:
+```r
+install.packages("wishmom")
+library("wishmom")
+```
+
+</br>
+
+# Mathematical Background
+
+## $\beta$-Wishart Distribution
+
+The $\beta$-Wishart distribution is a fundamental distribution in multivariate statistics.  When $\beta=1,\;2,\;4,\;8$, it is the real Wishart, complex Wishart, quaternion Wishart, and octonion Wishart, respectively.  The density function of $W \sim W_m^\beta(n,\Sigma)$, i,e., a $\beta$-Wishart distribution
+with $n$ degrees of freedom and an $m \times m$ covariance matrix  $\Sigma$, is given by (when $n > m-1$) (see D&#237;az-Garc&#237;a and Guti&#233;rrez-J&#225;imez (2011, Corollary 1))
+
+\[
+f(W) = \frac{\left(\frac{\beta}{2}\right)^\frac{mn\beta}{2}}{\Gamma_m^{(\beta)}\left(\frac{n \beta}{2}\right)
+|\Sigma|^\frac{n \beta}{2}}|W|^{\frac{(n-m+1)\beta}{2}-1}
+\mbox{etr}\left(-\frac{\beta \Sigma^{-1}W}{2}\right),
+\]
+
+where
+
+\[
+\Gamma_m^{(\beta)}(a) = \pi^\frac{m(m-1)\beta}{4}\prod_{i=1}^m \Gamma\left(a-\frac{(i-1)\beta}{2}\right).
+\]
+
+Note that we do not require $n$ to be an integer but
+the definition of the density of $W$ requires $\beta = 1,\;2,\;4$ or $8$.  However, if our interest is only on the functions of eigenvalues of $W$, we can
+generalize this to any real $\beta>0$.  Therefore, for
+any symmetric functions (say power-sum) of the eigenvalues
+of $W$, they can be well defined even when $\beta$ is not equal to $1,\;
+2,\;4$ or $8$.  For $W \sim W_m^\beta(n,\Sigma)$, the joint density of its eigenvalues $\lambda_1 \geq \cdots \geq \lambda_m$ is given by (see Dresnky, Edelman, Genoar, Kan, and Koev (2021))
+
+\[
+f(\lambda_1,\ldots,\lambda_m) = \frac{| \Sigma|^{-\frac{n\beta}{2}}}{\mathcal{K}_m^
+{(\beta)}\left(\frac{n\beta}{2}\right)}
+|\Lambda|^{\frac{(n-m+1)\beta}{2}-1}
+{}_0^{}F_0^{(\beta)}\left(-\frac{\beta}{2}\Lambda,\Sigma^{-1}\right)\prod_{1 \leq i < j \leq m}(\lambda_i-\lambda_j)^{\beta},
+\]
+where $\Lambda = \mbox{Diag}(\lambda_1,\ldots,\lambda_m)$, 
+
+\[
+\mathcal{K}_m^{(\beta)}(a) = 
+\frac{\left(\frac{2}{\beta}\right)^{ma}}
+{\pi^{\frac{m(m-1)\beta}{2}}}
+\frac{\Gamma_m^{(\beta)}\left(\frac{m\beta}{2}\right)\Gamma_m^{(\beta)}(a)}{\left[\Gamma\left(\frac{\beta}{2}\right)\right]^m},
+\]
+
+\[
+{}_0^{}F_0^{(\beta)}(A,B)
+= \sum_{k=0}^\infty \sum_{\kappa \vdash k}
+\frac{C_\kappa^{(\beta)}(A)C_\kappa^{(\beta)}(B)}
+{k!C_\kappa^{(\beta)}(I_m)},
+\]
+
+and $C_\kappa^{(\beta)}(X)$ is the Jack function of
+the eigenvalues of $X$.
+
+Instead of using $\beta$, we use $\alpha = 2/\beta$
+in our programs to describe the type of Wishart distribution.
+Therefore, $\alpha=2$ is for real Wishart, $\alpha=1$ is for complex Wishart, and $\alpha =1/2$ is for quaternion Wishart.
+
+
+
+## Moments of Matrix-valued Functions of $\beta$-Wishart and Inverse $\beta$-Wishart Distributions
+ 
+Let $\lambda = (\lambda_1,\ldots, \lambda_k)$ be an integer partition of a positive integer $k$, where $|\lambda|= \lambda_1+\ldots+\lambda_k=k$, with 
+$\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_k \geq 0$.
+The power-sum symmetric function $p_\lambda(W)$
+of $W$ corresponding to a partition $\lambda$ is defined as
+
+\[
+p_{\lambda}(W) = \prod_{i=1}^{\ell(\lambda)}p_{\lambda_i}(W),
+\]
+
+where $\ell(\lambda)$ is the number of non-zero parts of $\lambda$,
+and $p_i(W) = \mbox{tr}(W^i)$.  We are interested
+in computing
+
+\[
+\mathbb{E}[W^rp_{\lambda}(W)]\;\;\;\;\mbox{and}
+\;\;\;\;
+\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})],
+\]
+
+where $W \sim W^{\beta}_m(n,\Sigma)$.
+
+The method that we use is based on a generalization of the recurrence relations given in Hillier and Kan (2024)
+for which the cases of $\beta = 1$ and $2$ were developed.
+Specifically, we have the following recurrence relations:
+
+\begin{align}
+\mathbb{E}[W^{r+1}p_{\lambda}(W)] & = \left[n+\left(\frac{2}{\beta}-1\right)r\right]\Sigma \mathbb{E}[W^{r} p_{\lambda}(W)]+
+\sum_{j=1}^{r} \Sigma \mathbb{E}[W^{r-j}p_j(W)p_{\lambda}(W)] \nonumber \\
+& \;\;\;\;{}+\frac{2}{\beta}\sum_{i=1}^{\ell(\lambda)}\lambda_i \Sigma \mathbb{E}\left[W^{r+\lambda_i}p_{\lambda_{(i)}}(W)\right],  \\
+\Sigma^{-1}\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})] & = \left[\tilde{n}-\left(\frac{2}{\beta}-1\right)r\right]\mathbb{E}[W^{-(r+1)}p_{\lambda}(W^{-1})]
+-\sum_{j=1}^{r} \mathbb{E}[W^{-r-1+j}p_j(W^{-1})p_{\lambda}(W^{-1})] \nonumber \\
+& \;\;\;\;{}-\frac{2}{\beta} \sum_{i=1}^{\ell(\lambda)}\lambda_i \mathbb{E}[W^{-r-1-\lambda_i}p_{\lambda_{(i)}}(W^{-1})],
+\end{align}
+where $\tilde{n}= n-m+1-(2/\beta)$ and $\lambda_{(i)}$ is
+$\lambda$ with its $i$-th element removed.
+Together with the boundary conditions $\mathbb{E}[W] = n\Sigma$
+and $\mathbb{E}[W^{-1}] = \Sigma^{-1}/\tilde{n}$, we can obtain
+$\mathbb{E}[E^rp_{\lambda}(W)]$ and $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$.  Note
+that $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$
+exists if and only if $\tilde{n}>2(r+|\lambda|)$.
+
+Let $k=r+|\lambda|$.  Hillier and Kan (2024) show that 
+\begin{align}
+\mathbb{E}[W^{r}p_{\lambda}(W)] & = \sum_{i=1}^k\left[\sum_{\rho \vdash k-i} c_{\lambda,\rho}p_{\rho}(\Sigma)\right]\Sigma^i, \\
+\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})] & = \sum_{i=1}^k\left[\sum_{\rho \vdash k-i}\tilde{c}_{\lambda,\rho}p_{\rho}(\Sigma^{-1})\right]\Sigma^{-i}, 
+\end{align}
+where $c_{\lambda,\rho}$  and $\tilde{c}_{\lambda,\rho}$
+are constants that depend on $n$ and $\tilde{n}$, respectively, but they do not depend on $\Sigma$. 
+In addition, we have
+\begin{align}
+\mathbb{E}[p_{\lambda}(W)] & = \sum_{\kappa \vdash k} h_{\kappa}p_{\kappa}(\Sigma), \\
+\mathbb{E}[p_{\lambda}(W^{-1})] & = \sum_{\kappa \vdash k} \tilde{h}_{\kappa}p_{\kappa}(\Sigma^{-1}),
+\end{align}
+where $h_{\kappa}$ and $\tilde{h}_{\kappa}$ are constants
+that depend on $n$ and $\tilde{n}$, repsectively, but they do 
+not depend on $\Sigma$.  
+
+Using the recurrence relations, Hillier and Kan (2024)
+develop efficient algorithms for computing the constants
+$c_{\lambda,\rho}$, $\tilde{c}_{\lambda,\rho}$, $h_{\kappa}$
+and $\tilde{h}_{\kappa}$.
+
+
+<br/>
+
+# Main Functions in the Package
+
+There are two main functions in this package: 
+`wishmom` and `iwishmom`.  The former is used to 
+compute $\mathbb{E}[W^rp_{\lambda}(W)]$
+and the latter is used to compute $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$.
+
+
+## Moments of $\beta$-Wishart:
+
+### wishmom()
+
+The function `wishmom()` computes
+$\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}W^{iw}\right]$
+where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
+it computes $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}]$.
+
+#### Arguments
+
+- **`n`**: degrees of freedom of the $\beta$-Wishart distribution
+- **`S`**: covariance matrix of the $\beta$-Wishart distribution
+- **`f`**: a vector of nonnegative integers $f_j$ that represents the power for $\mbox{tr}(W^j)$, $j=1,\ldots, r$
+- **`iw`**: Power of $W$
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+
+#### Output
+
+When $iw=0$, it returns $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}]$.
+When $iw \neq 0$, it returns $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}W^{iw}]$.
+
+
+#### Examples
+
+
+
+```r
+# Example 1: For E[tr(W)^4] with W ~ W_m^1(n,S), where n and S are defined below:
+n <- 20
+S <- matrix(c(25, 49,
+              49, 109), nrow=2, ncol=2)
+wishmom(n, S, 4) # iw = 0, for real Wishart distribution
+#> [1] 8.705084e+13
+
+# Example 2: For E[tr(W)^2*tr(W^3)*W^2] with W ~ W_m^1(n,S), where n and S, are defined below:
+n <- 20
+S <- matrix(c(25, 49,
+              49, 109), nrow=2, ncol=2)
+wishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+#>              [,1]         [,2]
+#> [1,] 9.039462e+23 1.956948e+24
+#> [2,] 1.956948e+24 4.258714e+24
+
+# Example 3: For E[tr(W)^2*tr(W^3)] with W ~ W_m^2(n,S), where n and S are defined below:
+n <- 20
+S <- matrix(c(25, 49 + 2i,
+              49 - 2i, 109), nrow=2, ncol=2)
+wishmom(n, S, c(2, 0, 1), 0, 1) # iw = 0, for complex Wishart distribution
+#> [1] 2.078126e+17
+
+# Example 4: For E[tr(W)*tr(W^2)^2*tr(W^3)^2*W] with W ~ W_m^2(n,S), where n, S, are defined below:
+n <- 20
+S <- matrix(c(25, 49 + 2i,
+              49 - 2i, 109), nrow=2, ncol=2)
+wishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+#>                            [,1]                       [,2]
+#> [1,] 3.418999e+41+5.014362e+20i 6.943130e+41-2.833930e+40i
+#> [2,] 6.943130e+41+2.833930e+40i 1.532151e+42-2.882805e+22i
+```
+
+## Moments of Inverse $\beta$-Wishart:
+
+### iwishmom()
+
+The function `iwishmom()` computes
+$\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}\right]$
+where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
+it computes $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}]$.
+
+#### Arguments
+
+- **`n`**: degrees of freedom of the $\beta$-Wishart distribution
+- **`S`**: covariance matrix of the $\beta$-Wishart distribution
+- **`f`**: a vector of nonnegative integers $f_j$ that represents the power for $\mbox{tr}(W^{-j})$, $j=1,\ldots, r$
+- **`iw`**: Power of $W^{-1}$
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+
+#### Output
+
+When $iw=0$, it returns $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}]$.
+When $iw \neq 0$, it returns $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}]$.
+
+
+#### Examples
+
+```r
+# Example 1: For E[tr(W^{-1})^2] with W ~ W_m^1(n,S), where n and S are defined below:
+n <- 20
+S <- matrix(c(25, 49,
+              49, 109), nrow=2, ncol=2)
+iwishmom(n, S, 2) # iw = 0, for real Wishart distribution
+#> [1] 0.0006680892
+
+# Example 2: For E[tr(W^{-1})^2*tr(W^{-3})W^{-2}] with W ~ W_m^1(n,S), where n and S are defined below:
+n <- 20
+S <- matrix(c(25, 49,
+              49, 109), nrow=2, ncol=2)
+iwishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+#>               [,1]          [,2]
+#> [1,]  1.328434e-10 -6.101692e-11
+#> [2,] -6.101692e-11  2.824292e-11
+
+# Example 3: For E[tr(W^{-1})^2*tr(W^{-3})] with W ~ W_m^2(n,S), where n and S are defined below:
+n <- 20
+S <- matrix(c(25, 49 + 2i,
+              49 - 2i, 109), nrow=2, ncol=2)
+iwishmom(n, S, c(2, 0, 1), 0, 1) # iw = 0, for complex Wishart distribution
+#> [1] 1.17985e-08
+
+# Example 4: For E[tr(W^{-1})*tr(W^{-2})^2*tr(W^{-3})^2*W^{-1}] with W ~ W_m^2(n,S), where n and S are defined below:
+n <- 30
+S <- matrix(c(25, 49 + 2i,
+              49 -2i, 109), nrow=2, ncol=2)
+iwishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+#>                             [,1]                        [,2]
+#> [1,]  1.348928e-21+0.000000e+00i -6.116211e-22+2.496413e-23i
+#> [2,] -6.116211e-22-2.496413e-23i  3.004350e-22+0.000000e+00i
+```
+
+<br/>
+
+# Auxiliary Functions 
+
+Below is a list of auxiliary functions that are called by
+`wishmom` and `iswishmom`.
+
+### ip_desc()
+
+The function `ip_desc()` generates all integer partitions of a given integer `k` in a reverse lexicographical order.
+
+#### Arguments
+
+- **`k`**: A positive integer to be partitioned
+
+#### Output
+
+A matrix where each row represents an integer partition of `k`, listed in a reverse lexicographical order.
+
+#### Examples
+
+```r
+# Example 1: List of integer partitions of 3
+ip_desc(3)
+#>      [,1] [,2] [,3]
+#> [1,]    3    0    0
+#> [2,]    2    1    0
+#> [3,]    1    1    1
+
+# Example 2: List of integer partitions of 5
+ip_desc(5)
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    5    0    0    0    0
+#> [2,]    4    1    0    0    0
+#> [3,]    3    2    0    0    0
+#> [4,]    3    1    1    0    0
+#> [5,]    2    2    1    0    0
+#> [6,]    2    1    1    1    0
+#> [7,]    1    1    1    1    1
+```
+
+### dkmap()
+
+The function `dkmap()` computes the mapping matrix $D_k$
+discussed in Appendix B of Hillier and Kan (2024), modified
+for the general $\beta$-Wishart case.  The returned matrix 
+is $D_k$ but with $n$ in the diagonal elements removed.
+
+#### Arguments
+
+- **`k`**: The order of the mapping matrix $D_k$ (a positive integer)
+- **`alpha`**: The type of $\beta$-Wishart distribution ($\alpha =2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+  
+#### Output
+
+The mapping matrix $D_k$ but with $n$ removed from its diagonal.
+
+#### Examples
+
+```r
+# Example 1: Compute the mapping matrix for k = 2, real Wishart
+dkmap(2)
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    2    1    1    0
+#> [2,]    2    1    0    1
+#> [3,]    4    0    0    0
+#> [4,]    0    4    0    0
+
+# Example 2: Compute the mapping matrix for k = 1, complex Wishart
+dkmap(1, 1)
+#>      [,1] [,2]
+#> [1,]    0    1
+#> [2,]    1    0
+
+# Example 3: Compute the mapping matrix for k = 2, quaternion Wishart
+dkmap(2, 1/2)
+#>      [,1] [,2] [,3] [,4]
+#> [1,] -1.0  1.0    1    0
+#> [2,]  0.5 -0.5    0    1
+#> [3,]  1.0  0.0    0    0
+#> [4,]  0.0  1.0    0    0
+```
+
+### qk_coeffn()
+
+The function `qk_coeffn()` computes the coefficient matrix 
+$\mathcal{C}_k$, which is obtained based on Corollary 1
+of Hillier and Kan (2024), after a modification for the
+general $\beta$-Wishart case.
+
+#### Arguments
+
+- **`k`**: The order of the $\mathcal{C}_k$ matrix
+- **`n`**: The degrees of freedom of the $\beta$-Wishart distribution
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+
+#### Output
+$\mathcal{C}_k$, a matrix of constants that allow us
+to obtain $\mathbb{E}[p_{\lambda}(W)W^r]$, where 
+$r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+
+
+#### Examples
+
+```r
+# Example 1:
+qk_coeffn(2, 2) # For real Wishart distribution with k = 2 and n = 2
+#>      [,1] [,2]
+#> [1,]    6    2
+#> [2,]    4    4
+
+# Example 2:
+qk_coeffn(3, 2, 1) # For complex Wishart distribution with k = 3 and n = 2
+#>      [,1] [,2] [,3] [,4]
+#> [1,]   10    8    4    2
+#> [2,]    8   10    2    4
+#> [3,]    8    4    8    4
+#> [4,]    4    8    4    8
+
+# Example 3:
+qk_coeffn(2, 2, 1/2) # For quaternion Wishart distribution with k = 2 and n = 2
+#>      [,1] [,2]
+#> [1,]    3    2
+#> [2,]    1    4
+```
+
+### wish_psn()
+
+The function `wish_psn()` computes the coefficient matrix
+$\mathcal{H}_k$ that allows us to compute $\mathbb{E}[p_{\kappa}(W)]$, which is obtained based
+on Proposition 5 of Hillier and Kan (2024), 
+after a modification for the general $\beta$-Wishart case.
+
+
+#### Arguments
+
+- **`k`**: The order of $\mathcal{H}_k$ matrix
+- **`n`**: The degrees of freedom of the $\beta$-Wishart distribution
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default) 
+  
+#### Output
+$\mathcal{H}_k$, a matrix of constants that allows us
+to obtain $\mathbb{E}[p_{\kappa}(W)]$, where 
+$|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+  
+
+#### Examples
+
+```r
+# Example 1:
+wish_psn(3, 10) # For real Wishart distribution with k = 3 and n = 10
+#>      [,1] [,2] [,3]
+#> [1,] 1340  330   10
+#> [2,]  440 1140  100
+#> [3,]   80  600 1000
+
+# Example 2:
+wish_psn(4, 10, 1) # For complex Wishart distribution with k = 4 and n = 10
+#>       [,1]  [,2]  [,3]  [,4]  [,5]
+#> [1,] 10500  4040  2010   600    10
+#> [2,]  3030 10700   300  3030   100
+#> [3,]  4020   800 10200  2040   100
+#> [4,]   600  4040  1020 10500  1000
+#> [5,]    60   800   300  6000 10000
+
+# Example 3:
+wish_psn(2, 10, 1/2) # For quaternion Wishart distribution with k = 2 and n = 10
+#>      [,1] [,2]
+#> [1,]   95   10
+#> [2,]    5  100
+```
+
+
+### qkn_coeffn()
+
+
+The function `qkn_coeffn()` computes the inverse of the coefficient matrix $\tilde{\mathcal{C}}_k$, which is obtained based on Corollary 2 of Hillier and Kan (2024), after a modification for the
+general $\beta$-Wishart case.
+
+#### Arguments
+
+- **`k`**: The order of the $\tilde{\mathcal{C}}_k$ matrix
+- **`n1`**: $\tilde{n} = n-m+1-\alpha$, where $n$ is the degrees of freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
+  
+#### Output
+$\tilde{\mathcal{C}}_k^{-1}$, a matrix of constants that allow us
+to obtain $\mathbb{E}[p_{\lambda}(W^{-1})W^{-r}]$, where 
+$r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+
+
+#### Examples
+
+```r
+# Example 1:
+qkn_coeffn(2, 20) # For real Wishart distribution with k = 2 and n1 = 20
+#>      [,1] [,2]
+#> [1,]  380  -20
+#> [2,]  -40  400
+
+# Example 2:
+qkn_coeffn(3, 20, 1) # For complex Wishart distribution with k = 3 and n1 = 20
+#>      [,1] [,2] [,3] [,4]
+#> [1,] 8020 -800 -400   20
+#> [2,] -800 8020   20 -400
+#> [3,] -800   40 8000 -400
+#> [4,]   40 -800 -400 8000
+
+# Example 3:
+qkn_coeffn(2, 20, 1/2) # For quaternion Wishart distribution with k = 2 and n1 = 20
+#>      [,1] [,2]
+#> [1,]  410  -20
+#> [2,]  -10  400
+```
+
+### iwish_psn()
+
+The function `iwish_psn()` computes the inverse of the coefficient matrix $\tilde{\mathcal{H}}_k$ that allows us to compute $\mathbb{E}[p_{\kappa}(W^{-1})]$, which is obtained based
+on Eq.(82) of Hillier and Kan (2024), 
+after a modification for the general $\beta$-Wishart case.
+
+
+#### Arguments
+
+- **`k`**: The order of $\tilde{\mathcal{H}}_k$ matrix
+- **`n1`**: $\tilde{n} = n-m+1-\alpha$, where $n$ is the degrees of freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+
+  
+#### Output
+$\tilde{\mathcal{H}}_k^{-1}$, a matrix of constants that allows us
+to obtain $\mathbb{E}[p_{\kappa}(W^{-1})]$, where 
+$|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+  
+
+#### Examples
+
+```r
+# Example 1:
+iwish_psn(3, 10) # For real Wishart distribution with k = 3 and n1 = 10
+#>      [,1] [,2] [,3]
+#> [1,]  740 -270   10
+#> [2,] -360  940 -100
+#> [3,]   80 -600 1000
+
+# Example 2:
+iwish_psn(4, 10, 1) # For complex Wishart distribution with k = 4 and n1 = 10
+#>       [,1]  [,2]  [,3]  [,4]  [,5]
+#> [1,] 10500 -4040 -2010   600   -10
+#> [2,] -3030 10700   300 -3030   100
+#> [3,] -4020   800 10200 -2040   100
+#> [4,]   600 -4040 -1020 10500 -1000
+#> [5,]   -60   800   300 -6000 10000
+
+# Example 3:
+iwish_psn(2, 10, 1/2) # For quaternion Wishart distribution with k = 2 and n1 = 10
+#>      [,1] [,2]
+#> [1,]  105  -10
+#> [2,]   -5  100
+```
+
+<br/>
+
+# References
+
+D&#237;az-Garc&#237;a, Jos&#233; and Guti&#233;rrez-J&#225;imez,
+Ram&#243;n (2011). On Wishart
+distribution: som extension. 
+*Linear Algebra and its Applications*, 435, 1296-1310.
+
+Drensky, Vesselin, Edelman, Alan, Genoar, Tierney, Kan, Raymond,
+and Koev, Plamen (2021). The Densities and Distributions of the Largest Eigenvalue and the Trace of a Beta-Wishart Matrix.
+*Random Matrices: Theory and Applications*, 10(1).
+
+Letac, G&#233;rard, and Massam, H&#233;el&#232;ne (2004). All invariant moments of the Wishart distribution.
+*Scandinavian Journal of Statistics*, 31, 295-318.
+
+Hillier, Grant, and Kan, Raymond (2024). On the expectations of equivariant matrix-valued functions of Wishart and inverse Wishart Matrices.
+*Scandinavian Journal of Statistics*, 51, 697-723.
+
+<br/>
