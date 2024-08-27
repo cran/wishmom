@@ -19,8 +19,8 @@ knitr::opts_chunk$set(
 ```
 # Introduction
 
-The `wishmom` package provides functions to compute the expectation of matrix-valued functions of $\beta$-Wishart and inverse $\beta$-Wishart distributions ($\beta=1$: Real Wishart, $\beta=2$: Complex Wishart, $\beta=4$: Quaternion Wishart, $\beta=8$: Octonion Wishart). The main functions in this package are `wishmom()` and `iwishmom()`, which handle the $\beta$-Wishart and inverse $\beta$-Wishart distributions, respectively. These programs
-are developed based on the results in Letac and Massam (2004)
+The `wishmom` package provides functions to compute the expectation of matrix-valued functions of $\beta$-Wishart and inverse $\beta$-Wishart distributions ($\beta=1$: Real Wishart, $\beta=2$: Complex Wishart, $\beta=4$: Quaternion Wishart, $\beta=8$: Octonion Wishart). The main functions in this package are `wishmom()` and `iwishmom()`, which handle the numerical computation of moments of $\beta$-Wishart and inverse $\beta$-Wishart distributions, respectively.  The corresponding functions for generating analytical expressions of moments
+of $\beta$-Wishart and inverse $\beta$-Wishart distributions are `wishmom_sym()` and `iwishmom_sym()`.  These programs are developed based on the results in Letac and Massam (2004)
 and Hillier and Kan (2024).
 
 You can install the package and load it using:
@@ -157,10 +157,13 @@ and $\tilde{h}_{\kappa}$.
 
 # Main Functions in the Package
 
-There are two main functions in this package: 
-`wishmom` and `iwishmom`.  The former is used to 
+There are four main functions in this package: 
+`wishmom()`, `iwishmom()`, `wishmom_sym()`, and `iwishmom_sym()`. The first two are used to numerically
 compute $\mathbb{E}[W^rp_{\lambda}(W)]$
-and the latter is used to compute $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$.
+and $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$, respectively.
+The last two are used to generate an analytical expression
+of $\mathbb{E}[W^rp_{\lambda}(W)]$ and
+$\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$, respectively.  
 
 
 ## Moments of $\beta$-Wishart:
@@ -169,7 +172,7 @@ and the latter is used to compute $\mathbb{E}[W^{-r}p_{\lambda}(W^{-1})]$.
 
 The function `wishmom()` computes
 $\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}W^{iw}\right]$
-where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
+numerically, where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
 it computes $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}]$.
 
 #### Arguments
@@ -205,7 +208,7 @@ wishmom(n, S, 4) # iw = 0, for real Wishart distribution
 n <- 20
 S <- matrix(c(25, 49,
               49, 109), nrow=2, ncol=2)
-wishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+wishmom(n, S, c(2, 0, 1), 2, 2) # iw = 2, for real Wishart distribution
 #>              [,1]         [,2]
 #> [1,] 9.039462e+23 1.956948e+24
 #> [2,] 1.956948e+24 4.258714e+24
@@ -221,10 +224,78 @@ wishmom(n, S, c(2, 0, 1), 0, 1) # iw = 0, for complex Wishart distribution
 n <- 20
 S <- matrix(c(25, 49 + 2i,
               49 - 2i, 109), nrow=2, ncol=2)
-wishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+wishmom(n, S, c(1, 2, 2), 1, 1) # iw = 1, for complex Wishart distribution
 #>                            [,1]                       [,2]
 #> [1,] 3.418999e+41+5.014362e+20i 6.943130e+41-2.833930e+40i
 #> [2,] 6.943130e+41+2.833930e+40i 1.532151e+42-2.882805e+22i
+```
+
+### wishmom_sym()
+
+The function `wishmom_sym()` generates an analytical expression of
+$\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}W^{iw}\right]$,
+where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
+it generates an analytical expression of $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}]$. 
+
+#### Arguments
+
+- **`f`**: a vector of nonnegative integers $f_j$ that represents the power for $\mbox{tr}(W^j)$, $j=1,\ldots, r$
+- **`iw`**: Power of $W$
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+- **`latex`**: The type of output
+  - **`TRUE`**: LaTeX expression
+  - **`FALSE`**: Dataframe (default)
+
+
+#### Output
+
+When $iw = 0$, the output is an analytical expression of  $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}]$.
+When $iw \neq 0$, the output is an analytical expression of $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^j)^{f_j}W^{iw}]$.
+If `latex = FALSE` (default), the output is a data frame that stores the coefficients for the analytical expression.
+If `latex = TRUE`, the output is a $\LaTeX$ formatted string of the result in terms of $n$ and $\Sigma$. 
+
+
+#### Examples
+
+
+```r
+# Example 1: For E[tr(W)^4] with W ~ W_m^1(n,Sigma), represented as a dataframe:
+wishmom_sym(4) # iw = 0, for real Wishart distribution
+#>     kappa h_kappa
+#> 1       4      48
+#> 2     3,1     32n
+#> 3     2,2     12n
+#> 4   2,1,1   12n^2
+#> 5 1,1,1,1     n^3
+
+# Example 2: For E[tr(W)*tr(W^2)W] with W ~ W_m^1(n,Sigma), represented as a dataframe:
+wishmom_sym(c(1,1), 1) # iw = 1, for real Wishart distribution
+#>   i   rho          c
+#> 1 1     3    4n^2+4n
+#> 2 1   2,1 n^3+n^2+4n
+#> 3 1 1,1,1        n^2
+#> 4 2     2  2n^2+2n+8
+#> 5 2   1,1         6n
+#> 6 3     1 4n^2+4n+16
+#> 7 4  <NA>     24n+24
+
+# Example 3: For E[tr(W)^4] with W ~ W_m^2(n,Sigma), represented as a LaTeX string:
+writeLines(wishmom_sym(4, 0, 1, latex=TRUE)) # iw = 0, for complex Wishart distribution
+#> (6)p_{(4)}(\Sigma)
+#> +(8n)p_{(3,1)}(\Sigma)
+#> +(3n)p_{(2,2)}(\Sigma)
+#> +(6n^2)p_{(2,1,1)}(\Sigma)
+#> +(n^3)p_{(1,1,1,1)}(\Sigma)
+
+# Example 4: For E[tr(W)*tr(W^2)W] with W ~ W_m^2(n,Sigma), represented as a LaTeX string:
+writeLines(wishmom_sym(c(1, 1), 1, 1, latex=TRUE)) # iw = 1, for complex Wishart distribution
+#> [(2n^2)p_{(3)}(\Sigma)+(n^3+2n)p_{(2, 1)}(\Sigma)+(n^2)p_{(1, 1, 1)}(\Sigma)]\Sigma
+#> +[(n^2+2)p_{(2)}(\Sigma)+(3n)p_{(1, 1)}(\Sigma)]\Sigma^2
+#> +(2n^2+4)p_{(1)}(\Sigma)\Sigma^3
+#> +(6n)\Sigma^4
 ```
 
 ## Moments of Inverse $\beta$-Wishart:
@@ -232,7 +303,7 @@ wishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
 ### iwishmom()
 
 The function `iwishmom()` computes
-$\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}\right]$
+$\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}\right]$ numerically,
 where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
 it computes $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}]$.
 
@@ -267,7 +338,7 @@ iwishmom(n, S, 2) # iw = 0, for real Wishart distribution
 n <- 20
 S <- matrix(c(25, 49,
               49, 109), nrow=2, ncol=2)
-iwishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+iwishmom(n, S, c(2, 0, 1), 2, 2) # iw = 2, for real Wishart distribution
 #>               [,1]          [,2]
 #> [1,]  1.328434e-10 -6.101692e-11
 #> [2,] -6.101692e-11  2.824292e-11
@@ -283,10 +354,85 @@ iwishmom(n, S, c(2, 0, 1), 0, 1) # iw = 0, for complex Wishart distribution
 n <- 30
 S <- matrix(c(25, 49 + 2i,
               49 -2i, 109), nrow=2, ncol=2)
-iwishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+iwishmom(n, S, c(1, 2, 2), 1, 1) # iw = 1, for complex Wishart distribution
 #>                             [,1]                        [,2]
 #> [1,]  1.348928e-21+0.000000e+00i -6.116211e-22+2.496413e-23i
 #> [2,] -6.116211e-22-2.496413e-23i  3.004350e-22+0.000000e+00i
+```
+
+### iwishmom_sym()
+
+The function `iwishmom_sym()` generates an analytical expression of $\mathbb{E}\left[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}\right]$,
+where $W \sim W_m^\beta(n, \Sigma)$.  When $iw=0$,
+it generates an analytical expression of $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}]$. 
+
+#### Arguments
+
+- **`f`**: a vector of nonnegative integers $f_j$ that represents the power for $\mbox{tr}(W^{-j})$, $j=1,\ldots, r$
+- **`iw`**: Power of $W^{-1}$
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+- **`latex`**: The type of output
+  - **`TRUE`**: LaTeX expression
+  - **`FALSE`**: Dataframe (default)
+
+
+#### Output
+
+When $iw = 0$, the output is an analytical expression of  $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}]$.
+When $iw \neq 0$, the output is an analytical expression of $\mathbb{E}[\prod_{j=1}^r \mbox{tr}(W^{-j})^{f_j}W^{-iw}]$.
+If `latex = FALSE` (default), the output is a data frame that stores the coefficients for the analytical expression. If `latex = TRUE`, the output is a $\LaTeX$ formatted string of the result in terms of $\tilde{n}$ and $\Sigma$, where $\tilde{n} = n-m+1-\alpha$ and $m$ is the dimension of the $\beta$-Wishart 
+distribution.
+
+#### Examples
+
+```r
+# Example 1: For E[tr(W^{-1})^4] with W ~ W_m^1(n,Sigma), represented as a dataframe:
+iwishmom_sym(4) # iw = 0, for real Wishart distribution
+#> $dataframe
+#>     kappa      h_kappa_numerator
+#> 1       4              240n1-288
+#> 2     3,1           64n1^2-256n1
+#> 3     2,2        12n1^2-60n1+216
+#> 4   2,1,1  12n1^3-72n1^2+36n1+72
+#> 5 1,1,1,1 n1^4-7n1^3+n1^2+35n1-6
+#> 
+#> $denominator
+#> [1] "n1^8-7n1^7-11n1^6+107n1^5+34n1^4-388n1^3-24n1^2+288n1"
+
+# Example 2: For E[tr(W^{-1})*tr(W^{-2})W^{-1}] with W ~ W_m^1(n,Sigma), represented as a dataframe:
+iwishmom_sym(c(1,1), 1) # iw = 1, for real Wishart distribution
+#> $dataframe
+#>   i   rho          c_numerator
+#> 1 1     3 4n1^3-16n1^2-20n1+24
+#> 2 1   2,1 n1^4-6n1^3+3n1^2+6n1
+#> 3 1 1,1,1     n1^3-6n1^2+3n1+6
+#> 4 2     2    2n1^3-10n1^2+36n1
+#> 5 2   1,1       10n1^2-42n1+36
+#> 6 3     1 4n1^3-16n1^2+60n1-72
+#> 7 4  <NA>          40n1^2-48n1
+#> 
+#> $denominator
+#> [1] "n1^8-7n1^7-11n1^6+107n1^5+34n1^4-388n1^3-24n1^2+288n1"
+
+# Example 3: For E[tr(W^{-1})^4] with W ~ W_m^2(n,Sigma), represented as a LaTeX string:
+writeLines(iwishmom_sym(4, 0, 1, latex=TRUE)) # iw = 0, for complex Wishart distribution
+#> [(30\tilde{n})p_{(4)}(\Sigma^{-1})
+#> +(16\tilde{n}^2-24)p_{(3,1)}(\Sigma^{-1})
+#> +(3\tilde{n}^2+18)p_{(2,2)}(\Sigma^{-1})
+#> +(6\tilde{n}^3-24\tilde{n})p_{(2,1,1)}(\Sigma^{-1})
+#> +(\tilde{n}^4-8\tilde{n}^2+6)p_{(1,1,1,1)}(\Sigma^{-1})]
+#> /(\tilde{n}^8-14\tilde{n}^6+49\tilde{n}^4-36\tilde{n}^2)
+
+# Example 4: For E[tr(W^{-1})*tr(W^{-2})W^{-1}] with W ~ W_m^2(n,Sigma), represented as a LaTeX string:
+writeLines(iwishmom_sym(c(1, 1), 1, 1, latex=TRUE)) # iw = 1, for complex Wishart distribution
+#> [[(2\tilde{n}^3-8\tilde{n})p_{(3)}(\Sigma^{-1})+(\tilde{n}^4-4\tilde{n}^2)p_{(2,1)}(\Sigma^{-1})+(\tilde{n}^3-4\tilde{n})p_{(1,1,1)}(\Sigma^{-1})]\Sigma^{-1}
+#> +[(\tilde{n}^3+6\tilde{n})p_{(2)}(\Sigma^{-1})+(5\tilde{n}^2)p_{(1,1)}(\Sigma^{-1})]\Sigma^{-2}
+#> +(2\tilde{n}^3+12\tilde{n})p_{(1)}(\Sigma^{-1})\Sigma^{-3}
+#> +(10\tilde{n}^2)\Sigma^{-4}]
+#> /(\tilde{n}^8-14\tilde{n}^6+49\tilde{n}^4-36\tilde{n}^2)
 ```
 
 <br/>
@@ -294,7 +440,7 @@ iwishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
 # Auxiliary Functions 
 
 Below is a list of auxiliary functions that are called by
-`wishmom` and `iswishmom`.
+`wishmom`,  `iwishmom`, `wishmom_sym`, and `iwishmom_sym`.
 
 ### ip_desc()
 
@@ -375,121 +521,233 @@ dkmap(2, 1/2)
 #> [4,]  0.0  1.0    0    0
 ```
 
-### qk_coeffn()
+### denpoly()
 
-The function `qk_coeffn()` computes the coefficient matrix 
+The function `denpoly()` computes the coefficients of the denominator polynomial for the elements
+$\tilde{\mathcal{H}}_k$ and $\tilde{\mathcal{C}}_k$. The function returns a vector containing the coefficients 
+in descending powers of $\tilde{n}$, with the last element being the coefficient of $\tilde{n}$.
+
+#### Arguments
+
+- **`k`**: The order of the polynomial (a positive integer)
+- **`alpha`**: The type of $\beta$-Wishart distribution ($\alpha =2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default)
+  
+#### Output
+
+A vector containing the coefficients of the denominator 
+polynomial in descending powers of $\tilde{n}$ for the elements of $\mathcal{\tilde{H}}_k$ and $\tilde{\mathcal{C}}_k$.
+
+#### Examples
+
+```r
+# Example 1: Compute the denominator polynomial for k = 3 and alpha = 2
+# Output corresponds to the polynomial n1^5-3n1^4-8n1^3+12n1^2+16n1,
+# where n1 is \eqn{\tilde{n}}
+denpoly(3)
+#> [1]  1 -3 -8 12 16
+
+# Example 2: Compute the denominator polynomial for k = 2 and alpha = 1
+# Output corresponds to the polynomial n1^3-n1, where n1 is \eqn{\tilde{n}}
+denpoly(2, alpha = 1)
+#> [1]  1  0 -1
+```
+
+### qk_coeff()
+
+The function `qk_coeff()` computes the coefficient matrix 
 $\mathcal{C}_k$, which is obtained based on Corollary 1
 of Hillier and Kan (2024), after a modification for the
-general $\beta$-Wishart case.
+general $\beta$-Wishart case. $\mathcal{C}_k$ is represented as a
+3-dimensional array where each slice along the third dimension represents a coefficient matrix of the polynomial in descending powers of $n$.
 
 #### Arguments
 
 - **`k`**: The order of the $\mathcal{C}_k$ matrix
-- **`n`**: The degrees of freedom of the $\beta$-Wishart distribution
 - **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
   - **`1/2`**: Quaternion Wishart
   - **`1`**: Complex Wishart
   - **`2`**: Real Wishart (default)
 
 #### Output
-$\mathcal{C}_k$, a matrix of constants that allow us
-to obtain $\mathbb{E}[p_{\lambda}(W)W^r]$, where 
-$r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+A 3-dimensional array representing $\mathcal{C}_k$, a matrix of constants that allow us to obtain $\mathbb{E}[p_{\lambda}(W)W^r]$, where $r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$. 
 
 
 #### Examples
 
 ```r
 # Example 1:
-qk_coeffn(2, 2) # For real Wishart distribution with k = 2 and n = 2
+qk_coeff(2) # For real Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]    6    2
-#> [2,]    4    4
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]    1    1
+#> [2,]    2    0
 
 # Example 2:
-qk_coeffn(3, 2, 1) # For complex Wishart distribution with k = 3 and n = 2
+qk_coeff(3, 1) # For complex Wishart distribution with k = 3
+#> , , 1
+#> 
 #>      [,1] [,2] [,3] [,4]
-#> [1,]   10    8    4    2
-#> [2,]    8   10    2    4
-#> [3,]    8    4    8    4
-#> [4,]    4    8    4    8
+#> [1,]    1    0    0    0
+#> [2,]    0    1    0    0
+#> [3,]    0    0    1    0
+#> [4,]    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    0    2    1    0
+#> [2,]    2    0    0    1
+#> [3,]    2    0    0    1
+#> [4,]    0    2    1    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    1    0    0    1
+#> [2,]    0    1    1    0
+#> [3,]    0    2    0    0
+#> [4,]    2    0    0    0
 
 # Example 3:
-qk_coeffn(2, 2, 1/2) # For quaternion Wishart distribution with k = 2 and n = 2
+qk_coeff(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]    3    2
-#> [2,]    1    4
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,] -0.5    1
+#> [2,]  0.5    0
+
 ```
 
-### wish_psn()
+### wish_ps()
 
-The function `wish_psn()` computes the coefficient matrix
+The function `wish_ps()` computes the coefficient matrix
 $\mathcal{H}_k$ that allows us to compute $\mathbb{E}[p_{\kappa}(W)]$, which is obtained based
-on Proposition 5 of Hillier and Kan (2024), 
-after a modification for the general $\beta$-Wishart case.
+on Proposition 5 of Hillier and Kan (2024), after a modification for the general $\beta$-Wishart case. $\mathcal{H}_k$ is  represented as a 3-dimensional array where each slice along the third dimension represents a coefficient matrix of the polynomial in descending powers of $n$.
 
 
 #### Arguments
 
-- **`k`**: The order of $\mathcal{H}_k$ matrix
-- **`n`**: The degrees of freedom of the $\beta$-Wishart distribution
+- **`k`**: The order of the $\mathcal{H}_k$ matrix
 - **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
   - **`1/2`**: Quaternion Wishart
   - **`1`**: Complex Wishart
   - **`2`**: Real Wishart (default) 
   
 #### Output
-$\mathcal{H}_k$, a matrix of constants that allows us
-to obtain $\mathbb{E}[p_{\kappa}(W)]$, where 
-$|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+A 3-dimensional array representing $\mathcal{H}_k$, a matrix of constants that allows us to obtain $\mathbb{E}[p_{\kappa}(W)]$, where $|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
   
 
 #### Examples
 
 ```r
 # Example 1:
-wish_psn(3, 10) # For real Wishart distribution with k = 3 and n = 10
+wish_ps(3) # For real Wishart distribution with k = 3
+#> , , 1
+#> 
 #>      [,1] [,2] [,3]
-#> [1,] 1340  330   10
-#> [2,]  440 1140  100
-#> [3,]   80  600 1000
+#> [1,]    1    0    0
+#> [2,]    0    1    0
+#> [3,]    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3]
+#> [1,]    3    3    0
+#> [2,]    4    1    1
+#> [3,]    0    6    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3]
+#> [1,]    4    3    1
+#> [2,]    4    4    0
+#> [3,]    8    0    0
 
 # Example 2:
-wish_psn(4, 10, 1) # For complex Wishart distribution with k = 4 and n = 10
-#>       [,1]  [,2]  [,3]  [,4]  [,5]
-#> [1,] 10500  4040  2010   600    10
-#> [2,]  3030 10700   300  3030   100
-#> [3,]  4020   800 10200  2040   100
-#> [4,]   600  4040  1020 10500  1000
-#> [5,]    60   800   300  6000 10000
+wish_ps(4, 1) # For complex Wishart distribution with k = 4
+#> , , 1
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    1    0    0    0    0
+#> [2,]    0    1    0    0    0
+#> [3,]    0    0    1    0    0
+#> [4,]    0    0    0    1    0
+#> [5,]    0    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    4    2    0    0
+#> [2,]    3    0    0    3    0
+#> [3,]    4    0    0    2    0
+#> [4,]    0    4    1    0    1
+#> [5,]    0    0    0    6    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    5    0    0    6    0
+#> [2,]    0    7    3    0    1
+#> [3,]    0    8    2    0    1
+#> [4,]    6    0    0    5    0
+#> [5,]    0    8    3    0    0
+#> 
+#> , , 4
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    4    1    0    1
+#> [2,]    3    0    0    3    0
+#> [3,]    2    0    0    4    0
+#> [4,]    0    4    2    0    0
+#> [5,]    6    0    0    0    0
 
 # Example 3:
-wish_psn(2, 10, 1/2) # For quaternion Wishart distribution with k = 2 and n = 10
+wish_ps(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]   95   10
-#> [2,]    5  100
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,] -0.5    1
+#> [2,]  0.5    0
+
 ```
 
+### qkn_coeff()
 
-### qkn_coeffn()
 
-
-The function `qkn_coeffn()` computes the inverse of the coefficient matrix $\tilde{\mathcal{C}}_k$, which is obtained based on Corollary 2 of Hillier and Kan (2024), after a modification for the
-general $\beta$-Wishart case.
+The function `qkn_coeff()` computes the inverse of the coefficient matrix $\tilde{\mathcal{C}}_k$, which is obtained based on Corollary 2 of Hillier and Kan (2024), after a modification for the general $\beta$-Wishart case. $\tilde{\mathcal{C}}_k^{-1}$ is represented as a 3-dimensional array where each slice along the third dimension represents a coefficient matrix of the polynomial in descending powers of $\tilde{n}$.
 
 #### Arguments
 
 - **`k`**: The order of the $\tilde{\mathcal{C}}_k$ matrix
-- **`n1`**: $\tilde{n} = n-m+1-\alpha$, where $n$ is the degrees of freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
 - **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
   - **`1/2`**: Quaternion Wishart
   - **`1`**: Complex Wishart
-  - **`2`**: Real Wishart (default)
-freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
+  - **`2`**: Real Wishart (default) 
   
 #### Output
-$\tilde{\mathcal{C}}_k^{-1}$, a matrix of constants that allow us
-to obtain $\mathbb{E}[p_{\lambda}(W^{-1})W^{-r}]$, where 
+A 3-dimensional array representing $\tilde{\mathcal{C}}_k^{-1}$, a matrix of constants that allow us to obtain $\mathbb{E}[p_{\lambda}(W^{-1})W^{-r}]$, where 
 $r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
 
 
@@ -497,37 +755,72 @@ $r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
 
 ```r
 # Example 1:
-qkn_coeffn(2, 20) # For real Wishart distribution with k = 2 and n1 = 20
+qkn_coeff(2) # For real Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]  380  -20
-#> [2,]  -40  400
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]   -1   -1
+#> [2,]   -2    0
 
 # Example 2:
-qkn_coeffn(3, 20, 1) # For complex Wishart distribution with k = 3 and n1 = 20
+qkn_coeff(3, 1) # For complex Wishart distribution with k = 3
+#> , , 1
+#> 
 #>      [,1] [,2] [,3] [,4]
-#> [1,] 8020 -800 -400   20
-#> [2,] -800 8020   20 -400
-#> [3,] -800   40 8000 -400
-#> [4,]   40 -800 -400 8000
+#> [1,]    1    0    0    0
+#> [2,]    0    1    0    0
+#> [3,]    0    0    1    0
+#> [4,]    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    0   -2   -1    0
+#> [2,]   -2    0    0   -1
+#> [3,]   -2    0    0   -1
+#> [4,]    0   -2   -1    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    1    0    0    1
+#> [2,]    0    1    1    0
+#> [3,]    0    2    0    0
+#> [4,]    2    0    0    0
 
 # Example 3:
-qkn_coeffn(2, 20, 1/2) # For quaternion Wishart distribution with k = 2 and n1 = 20
+qkn_coeff(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]  410  -20
-#> [2,]  -10  400
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]  0.5   -1
+#> [2,] -0.5    0
+
 ```
 
-### iwish_psn()
+### iwish_ps()
 
-The function `iwish_psn()` computes the inverse of the coefficient matrix $\tilde{\mathcal{H}}_k$ that allows us to compute $\mathbb{E}[p_{\kappa}(W^{-1})]$, which is obtained based
+The function `iwish_ps()` computes the inverse of the coefficient matrix $\tilde{\mathcal{H}}_k$ that allows us to compute $\mathbb{E}[p_{\kappa}(W^{-1})]$, which is obtained based
 on Eq.(82) of Hillier and Kan (2024), 
-after a modification for the general $\beta$-Wishart case.
+after a modification for the general $\beta$-Wishart case. $\tilde{\mathcal{H}}_k^{-1}$ is represented as a 3-dimensional array where each slice along the third dimension represents a 
+coefficient matrix of the polynomial in descending powers of $\tilde{n}$.
 
 
 #### Arguments
 
-- **`k`**: The order of $\tilde{\mathcal{H}}_k$ matrix
-- **`n1`**: $\tilde{n} = n-m+1-\alpha$, where $n$ is the degrees of freedom of the $\beta$-Wishart distribution, and $m$ is the dimension of the $\beta$-Wishart distribution
+- **`k`**: The order of the $\tilde{\mathcal{H}}_k$ matrix
 - **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
   - **`1/2`**: Quaternion Wishart
   - **`1`**: Complex Wishart
@@ -535,36 +828,309 @@ after a modification for the general $\beta$-Wishart case.
 
   
 #### Output
-$\tilde{\mathcal{H}}_k^{-1}$, a matrix of constants that allows us
-to obtain $\mathbb{E}[p_{\kappa}(W^{-1})]$, where 
-$|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+A 3-dimensional array representing $\tilde{\mathcal{H}}_k^{-1}$, a matrix of constants that allows us to obtain $\mathbb{E}[p_{\kappa}(W^{-1})]$, where $|\kappa|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
   
 
 #### Examples
 
 ```r
 # Example 1:
-iwish_psn(3, 10) # For real Wishart distribution with k = 3 and n1 = 10
+iwish_ps(3) # For real Wishart distribution with k = 3
+#> , , 1
+#> 
 #>      [,1] [,2] [,3]
-#> [1,]  740 -270   10
-#> [2,] -360  940 -100
-#> [3,]   80 -600 1000
+#> [1,]    1    0    0
+#> [2,]    0    1    0
+#> [3,]    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3]
+#> [1,]   -3   -3    0
+#> [2,]   -4   -1   -1
+#> [3,]    0   -6    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3]
+#> [1,]    4    3    1
+#> [2,]    4    4    0
+#> [3,]    8    0    0
 
 # Example 2:
-iwish_psn(4, 10, 1) # For complex Wishart distribution with k = 4 and n1 = 10
-#>       [,1]  [,2]  [,3]  [,4]  [,5]
-#> [1,] 10500 -4040 -2010   600   -10
-#> [2,] -3030 10700   300 -3030   100
-#> [3,] -4020   800 10200 -2040   100
-#> [4,]   600 -4040 -1020 10500 -1000
-#> [5,]   -60   800   300 -6000 10000
+iwish_ps(4, 1) # For complex Wishart distribution with k = 4
+#> , , 1
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    1    0    0    0    0
+#> [2,]    0    1    0    0    0
+#> [3,]    0    0    1    0    0
+#> [4,]    0    0    0    1    0
+#> [5,]    0    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0   -4   -2    0    0
+#> [2,]   -3    0    0   -3    0
+#> [3,]   -4    0    0   -2    0
+#> [4,]    0   -4   -1    0   -1
+#> [5,]    0    0    0   -6    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    5    0    0    6    0
+#> [2,]    0    7    3    0    1
+#> [3,]    0    8    2    0    1
+#> [4,]    6    0    0    5    0
+#> [5,]    0    8    3    0    0
+#> 
+#> , , 4
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0   -4   -1    0   -1
+#> [2,]   -3    0    0   -3    0
+#> [3,]   -2    0    0   -4    0
+#> [4,]    0   -4   -2    0    0
+#> [5,]   -6    0    0    0    0
 
 # Example 3:
-iwish_psn(2, 10, 1/2) # For quaternion Wishart distribution with k = 2 and n1 = 10
+iwish_ps(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> , , 1
+#> 
 #>      [,1] [,2]
-#> [1,]  105  -10
-#> [2,]   -5  100
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]  0.5   -1
+#> [2,] -0.5    0
+
 ```
+
+
+### qkn_coeffr()
+
+
+The function `qkn_coeffr()` computes the coefficient matrix $\tilde{\mathcal{C}}_k$ for the general $\beta$-Wishart case. 
+Elements of $\tilde{\mathcal{C}}_k$ are rational
+polynomials of $\tilde{n}$.  The output contains two components:
+`c` and `den`.  `c` is a 3-dimensional array where each slice along the third dimension represents a coefficient matrix of the numerator polynomial in descending powers of $\tilde{n}$,
+and `den` is a vector that represents the coefficients
+of the denominator polynomial in descending power of $\tilde{n}$.
+
+#### Arguments
+
+- **`k`**: The order of the $\tilde{\mathcal{C}}_k$ matrix
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default) 
+  
+#### Output
+The output has two components: `c` and `den`.  `c` is
+a 3-dimensional array representing the numerator polynomial
+of $\tilde{\mathcal{C}}_k$, and `den` is a vector representing the denominator polynomial of $\tilde{\mathcal{C}}_k$, where $\tilde{\mathcal{C}}_k$ is a matrix of constants that allow us to obtain $\mathbb{E}[p_{\lambda}(W^{-1})W^{-r}]$, where 
+$r+|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+
+
+#### Examples
+
+```r
+# Example 1:
+qkn_coeffr(2) # For real Wishart distribution with k = 2
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2]
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]    0    1
+#> [2,]    2   -1
+#> 
+#> 
+#> $den
+#> [1]  1 -1 -2
+ 
+# Example 2:
+qkn_coeffr(3, 1) # For complex Wishart distribution with k = 3
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    1    0    0    0
+#> [2,]    0    1    0    0
+#> [3,]    0    0    1    0
+#> [4,]    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    0    2    1    0
+#> [2,]    2    0    0    1
+#> [3,]    2    0    0    1
+#> [4,]    0    2    1    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4]
+#> [1,]    0    0    0    2
+#> [2,]    0    0    2    0
+#> [3,]    0    4   -2    0
+#> [4,]    4    0    0   -2
+#> 
+#> 
+#> $den
+#> [1]  1  0 -5  0  4
+
+# Example 3:
+qkn_coeffr(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2]
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]  0.0  1.0
+#> [2,]  0.5  0.5
+#> 
+#> 
+#> $den
+#> [1]  1.0  0.5 -0.5
+
+```
+
+### iwish_psr()
+
+
+The function `iwish_psr()` computes the coefficient matrix $\tilde{\mathcal{H}}_k$ for the general $\beta$-Wishart case. 
+Elements of $\tilde{\mathcal{H}}_k$ are rational
+polynomials of $\tilde{n}$.  The output contains two components:
+`c` and `den`.  `c` is a 3-dimensional array where each slice along the third dimension represents a coefficient matrix of the numerator polynomial in descending powers of $\tilde{n}$,
+and `den` is a vector that represents the coefficients
+of the denominator polynomial in descending power of $\tilde{n}$.
+
+#### Arguments
+
+- **`k`**: The order of the $\tilde{\mathcal{C}}_k$ matrix
+- **`alpha`**: The type of Wishart distribution ($\alpha=2/\beta$):
+  - **`1/2`**: Quaternion Wishart
+  - **`1`**: Complex Wishart
+  - **`2`**: Real Wishart (default) 
+  
+#### Output
+The output has two components: `c` and `den`.  `c` is
+a 3-dimensional array representing the numerator polynomial
+of $\tilde{\mathcal{H}}_k$, and `den` is a vector representing the denominator polynomial of $\tilde{\mathcal{H}}_k$, where $\tilde{\mathcal{H}}_k$ is a matrix of constants that allow us to obtain $\mathbb{E}[p_{\lambda}(W^{-1})]$, where 
+$|\lambda|=k$ and $W \sim W_m^{\beta}(n,\Sigma)$.
+
+
+#### Examples
+
+```r
+# Example 1:
+iwsih_psr(2) # For real Wishart distribution with k = 2
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2]
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]    0    1
+#> [2,]    2   -1
+#> 
+#> 
+#> $den
+#> [1]  1 -1 -2
+ 
+# Example 2:
+iwish_psr(4, 1) # For complex Wishart distribution with k = 4
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    1    0    0    0    0
+#> [2,]    0    1    0    0    0
+#> [3,]    0    0    1    0    0
+#> [4,]    0    0    0    1    0
+#> [5,]    0    0    0    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    4    2    0    0
+#> [2,]    3    0    0    3    0
+#> [3,]    4    0    0    2    0
+#> [4,]    0    4    1    0    1
+#> [5,]    0    0    0    6    0
+#> 
+#> , , 3
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    1    0    0   10    0
+#> [2,]    0    3    6    0    2
+#> [3,]    0   16   -6    0    1
+#> [4,]   10    0    0    1    0
+#> [5,]    0   16    3    0   -8
+#> 
+#> , , 4
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    4   -3    0    5
+#> [2,]    3    0    0    3    0
+#> [3,]   -6    0    0   12    0
+#> [4,]    0    4    6    0   -4
+#> [5,]   30    0    0  -24    0
+#> 
+#> , , 5
+#> 
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    0    0    0    0
+#> [2,]    0   12   -9    0   -3
+#> [3,]    0  -24   18    0    6
+#> [4,]    0    0    0    0    0
+#> [5,]    0  -24   18    0    6
+#> 
+#> 
+#> $den
+#> [1]   1   0 -14   0  49   0 -36   0
+
+# Example 3:
+iwish_psr(2, 1/2) # For quaternion Wishart distribution with k = 2
+#> $c
+#> , , 1
+#> 
+#>      [,1] [,2]
+#> [1,]    1    0
+#> [2,]    0    1
+#> 
+#> , , 2
+#> 
+#>      [,1] [,2]
+#> [1,]  0.0  1.0
+#> [2,]  0.5  0.5
+#> 
+#> 
+#> $den
+#> [1]  1.0  0.5 -0.5
+
+```
+
 
 <br/>
 

@@ -34,7 +34,7 @@
 #' n <- 20
 #' S <- matrix(c(25, 49,
 #'               49, 109), nrow=2, ncol=2)
-#' iwishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+#' iwishmom(n, S, c(2, 0, 1), 2, 2) # iw = 2, for real Wishart distribution
 #'
 #' # Example 3: For E[tr(W^{-1})^2*tr(W^{-3})] with W ~ W_m^2(n,S),
 #' # where n and S are defined below:
@@ -49,7 +49,7 @@
 #' n <- 30
 #' S <- matrix(c(25, 49 + 2i,
 #'               49 - 2i, 109), nrow=2, ncol=2)
-#' iwishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+#' iwishmom(n, S, c(1, 2, 2), 1, 1) # iw = 1, for complex Wishart distribution
 
 iwishmom <- function(n, S, f, iw = 0, alpha = 2) {
   m <- nrow(S)
@@ -124,7 +124,12 @@ iwishmom <- function(n, S, f, iw = 0, alpha = 2) {
 
   if (iw == 0) {  # The output is a scalar for this case
     if (k == 0) return(m)
-    c <- solve(iwish_psn(k, n1, alpha))
+    c <- iwish_ps(k, alpha)
+    temp <- matrix(0, nrow = dim(c)[1], ncol = dim(c)[1])
+    for (i in 1:k) {
+      temp <- temp + c[,,i]*n1^(k-i+1)
+    }
+    c <- solve(temp)
     c <- c[ind(f), ]
     pp <- ip_desc(k)
     Q <- c[1] * tS[k]
@@ -134,7 +139,12 @@ iwishmom <- function(n, S, f, iw = 0, alpha = 2) {
       Q <- Q + c[i] * prod(tS[pp1])
     }
   } else {
-    c <- solve(qkn_coeffn(k, n1, alpha))
+    c <- qkn_coeff(k, alpha)
+    temp <- matrix(0, nrow = dim(c)[1], ncol = dim(c)[1])
+    for (i in 1:k) {
+      temp <- temp + c[,,i]*n1^(k-i+1)
+    }
+    c <- solve(temp)
     c <- rev(c[ind(f,iw), ])
     S1 <- Si
     Q <- matrix(0, m, m)
@@ -154,6 +164,5 @@ iwishmom <- function(n, S, f, iw = 0, alpha = 2) {
     }
     Q <- Q + c[count] * S1
   }
-
   return(Q)
 }

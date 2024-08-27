@@ -45,7 +45,7 @@ iwishmom(n, S, 2) # iw = 0, for real Wishart distribution
 n <- 20
 S <- matrix(c(25, 49,
               49, 109), nrow=2, ncol=2)
-iwishmom(n, S, c(2, 0, 1), 2, 2) # for real Wishart distribution
+iwishmom(n, S, c(2, 0, 1), 2, 2) # iw = 2, for real Wishart distribution
 
 # Example 3: For E[tr(W^{-1})^2*tr(W^{-3})] with W ~ W_m^2(n,S),
 # where n and S are defined below:
@@ -60,5 +60,5 @@ iwishmom(n, S, c(2, 0, 1), 0, 1) # iw = 0, for complex Wishart distribution
 n <- 30
 S <- matrix(c(25, 49 + 2i,
               49 - 2i, 109), nrow=2, ncol=2)
-iwishmom(n, S, c(1, 2, 2), 1, 1) # for complex Wishart distribution
+iwishmom(n, S, c(1, 2, 2), 1, 1) # iw = 1, for complex Wishart distribution
 }
